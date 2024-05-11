@@ -30,7 +30,7 @@ namespace WindowsFormsApp1
 			string email = textBox1.Text.Trim();
 			string password = textBox2.Text;
 			string confirmPassword = textBox3.Text;
-			int id  = GetMaxUserID() ;
+			int id = GetMaxUserID();
 
 			if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(confirmPassword))
 			{
@@ -38,42 +38,42 @@ namespace WindowsFormsApp1
 				return;
 			}
 
-			
+
 			if (password != confirmPassword)
 			{
 				MessageBox.Show("Password and Confirm Password do not match.");
 				return;
 			}
 
-			
-			
-				conn = new OracleConnection(ordb);
-				conn.Open();
 
-				string query = "INSERT INTO users (Id , name, email, password ,Role) VALUES ( :id , :name, :email, :password , 0)";
 
-				OracleCommand command = new OracleCommand(query, conn);
-				command.Parameters.Add(":id", OracleDbType.Varchar2).Value = id;
-				command.Parameters.Add(":name", OracleDbType.Varchar2).Value = name;
-				command.Parameters.Add(":email", OracleDbType.Varchar2).Value = email;
-				command.Parameters.Add(":password", OracleDbType.Varchar2).Value = password;
+			conn = new OracleConnection(ordb);
+			conn.Open();
+
+			string query = "INSERT INTO users (Id , name, email, password ,Role) VALUES ( :id , :name, :email, :password , 0)";
+
+			OracleCommand command = new OracleCommand(query, conn);
+			command.Parameters.Add(":id", OracleDbType.Varchar2).Value = id;
+			command.Parameters.Add(":name", OracleDbType.Varchar2).Value = name;
+			command.Parameters.Add(":email", OracleDbType.Varchar2).Value = email;
+			command.Parameters.Add(":password", OracleDbType.Varchar2).Value = password;
 
 			int rowsInserted = command.ExecuteNonQuery();
 
-				if (rowsInserted > 0)
-				{
-					MessageBox.Show("Registration successful.");
-					this.Hide();
-					Form1 form = new Form1();
-					form.Show();
-				}
-				else
-				{
-					MessageBox.Show("Registration failed.");
-				}
-
-				conn.Close();
+			if (rowsInserted > 0)
+			{
+				MessageBox.Show("Registration successful.");
+				this.Hide();
+				Form1 form = new Form1();
+				form.Show();
 			}
+			else
+			{
+				MessageBox.Show("Registration failed.");
+			}
+
+			conn.Close();
+		}
 
 
 
@@ -81,17 +81,27 @@ namespace WindowsFormsApp1
 		{
 			int maxId = 0;
 
-			using (conn = new OracleConnection(ordb))
+			using (OracleConnection conn = new OracleConnection(ordb))
 			{
 				conn.Open();
 
-				string query = "SELECT MAX(Id) FROM users";
-				OracleCommand command = new OracleCommand(query, conn);
+				
+				OracleCommand command = new OracleCommand("GetMaxUserID", conn);
+				command.CommandType = CommandType.StoredProcedure;
 
-				object result = command.ExecuteScalar();
-				if (result != null && result != DBNull.Value)
+				
+				OracleParameter maxIdParam = new OracleParameter("UID", OracleDbType.Int32);
+				maxIdParam.Direction = ParameterDirection.Output;
+				command.Parameters.Add(maxIdParam);
+
+				
+				command.ExecuteNonQuery();
+
+				
+				OracleDecimal oracleDecimal = (OracleDecimal)maxIdParam.Value;
+				if (!oracleDecimal.IsNull)
 				{
-					maxId = Convert.ToInt32(result);
+					maxId = oracleDecimal.ToInt32();
 				}
 
 				conn.Close();
@@ -99,6 +109,8 @@ namespace WindowsFormsApp1
 
 			return maxId + 1;
 		}
+
+
 
 		private void Register_Load(object sender, EventArgs e)
 		{
@@ -109,4 +121,3 @@ namespace WindowsFormsApp1
 
 
 }
-

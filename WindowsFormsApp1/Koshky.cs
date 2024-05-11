@@ -1,4 +1,5 @@
 ﻿using Oracle.DataAccess.Client;
+using Oracle.DataAccess.Types;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -162,23 +163,31 @@ namespace WindowsFormsApp1
 		{
 			int maxId = 0;
 
-			using (conn = new OracleConnection(ordb))
+			using (OracleConnection conn = new OracleConnection(ordb))
 			{
 				conn.Open();
 
-				string query = "SELECT MAX(Id) FROM cart";
-				OracleCommand command = new OracleCommand(query, conn);
 
-				object result = command.ExecuteScalar();
-				if (result != null && result != DBNull.Value)
+				OracleCommand command = new OracleCommand("GetMaxCartID", conn);
+				command.CommandType = CommandType.StoredProcedure;
+
+
+				OracleParameter maxIdParam = new OracleParameter("MID", OracleDbType.Int32);
+				maxIdParam.Direction = ParameterDirection.Output;
+				command.Parameters.Add(maxIdParam);
+
+
+				command.ExecuteNonQuery();
+
+
+				OracleDecimal oracleDecimal = (OracleDecimal)maxIdParam.Value;
+				if (!oracleDecimal.IsNull)
 				{
-					maxId = Convert.ToInt32(result);
+					maxId = oracleDecimal.ToInt32();
 				}
 
-				MessageBox.Show($"{maxId}");
+				conn.Close();
 			}
-			
-
 
 			return maxId + 1;
 		}
